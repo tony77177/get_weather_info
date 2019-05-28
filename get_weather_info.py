@@ -12,7 +12,7 @@ import requests
 import datetime
 import logging.handlers
 
-receive_mobile = '15285149403'  # 接受短信手机号码
+receive_mobile = '18785121187'  # 接受短信手机号码
 sms_template_num = 'T170317004526'  # 短信网关模板编号
 
 # 设置日志配置环境
