@@ -16,8 +16,8 @@ receive_mobile = '15285149403'  # 接受短信手机号码
 sms_template_num = 'T170317004526'  # 短信网关模板编号
 
 # 设置日志配置环境
-LOG_FILE = r'./weather.log'  #  本地缓解经
-# LOG_FILE = r'/root/job_spider/job_spider/spider.log'    #线上环境
+LOG_FILE = r'./weather.log'  #  日志存储路径
+
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
                                                encoding='utf-8')  # 实例化handler
