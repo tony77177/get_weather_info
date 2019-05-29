@@ -12,8 +12,38 @@ import requests
 import datetime
 import logging.handlers
 
-receive_mobile = '18785121187'  # 接受短信手机号码
+receive_mobile = '##'  # 接受短信手机号码
+
 sms_template_num = 'T170317004526'  # 短信网关模板编号
+
+# 获取当前为周几，用于判断：工作日时间推送观山湖区天气预报，休息日推送南明区天气预报 南明区ID：2991  观山湖区ID：2998
+curr_day = ''  # 短信推送周几的变量
+city_id = ''  # 推送城市ID
+city_name = ''  # 推送的城市名字
+curr_day_info = datetime.datetime.now()
+curr_day_tmp = curr_day_info.weekday()  # 获取当前周几数字
+
+if curr_day_tmp == 0:
+    curr_day = '一'
+elif curr_day_tmp == 1:
+    curr_day = '二'
+elif curr_day_tmp == 2:
+    curr_day = '三'
+elif curr_day_tmp == 3:
+    curr_day = '四'
+elif curr_day_tmp == 4:
+    curr_day = '五'
+elif curr_day_tmp == 5:
+    curr_day = '六'
+elif curr_day_tmp == 6:
+    curr_day = '天'
+
+if (curr_day_tmp == 5 or curr_day_tmp == 6):  # 如果是周末，则推送南明区天气，否则推送观山湖区
+    city_id = 2991
+    city_name = '南明区'
+else:
+    city_id = 2998
+    city_name = '观山湖'
 
 # 设置日志配置环境
 LOG_FILE = r'/root/get_weather_info/get_weather_info/weather.log'  #  日志存储路径
@@ -43,7 +73,7 @@ headers = {}
 three_days_bodys = {}
 three_days_url = host + three_days_path  # 天气API URL
 
-three_days_bodys['cityId'] = '2998'  # cityID:    2998观山湖 2982贵阳市 2991南明区
+three_days_bodys['cityId'] = city_id  # cityID:    2998观山湖 2982贵阳市 2991南明区
 three_days_bodys['token'] = '677282c2f1b3d718152c4e25ed434bc4'  # 未来3天的精简预报
 
 headers['Authorization'] = 'APPCODE ' + appcode
@@ -52,24 +82,18 @@ three_days_result = requests.post(three_days_url, headers=headers, data=three_da
 
 three_days_json_result = json.loads(three_days_result.text)
 
-logger.info(u'三天天气情况获取JSON结果为：%s' % (three_days_json_result))
-
-#  获取实时天气预报及天气温度差结束
 today_high_temp = three_days_json_result['data']['forecast'][0]['tempDay']  # 当天最高气温
 today_low_temp = three_days_json_result['data']['forecast'][0]['tempNight']  # 当天最低气温
 
-# request.add_header('Authorization', 'APPCODE ' + appcode)
+logger.info(u'三天天气情况获取JSON结果为：%s' % (three_days_json_result))
 
-# print(bodys)
-# print(url)
-# print(headers)
-# exit()
+
 
 #    获取当前实时天气预报
 curr_temp_path = '/whapi/json/alicityweather/briefcondition'  # 实时天气API地址
 curr_temp_url = host + curr_temp_path
 curr_temp_bodys = {}
-curr_temp_bodys['cityId'] = '2998'
+curr_temp_bodys['cityId'] = city_id
 curr_temp_bodys['token'] = '46e13b7aab9bb77ee3358c3b672a2ae4'  # 实时天气的token
 
 curr_temp_result = requests.post(curr_temp_url, headers=headers, data=curr_temp_bodys)
@@ -80,16 +104,10 @@ curr_temp = curr_temp_json_result['data']['condition']['temp']
 
 # print(r.text)
 logger.info(u'实时天气接口获取JSON信息：%s' % (curr_temp_json_result))
-
-# print(today_high_temp)
-# print(today_low_temp)
-# print(curr_temp)
-
 logger.info(u'------天气接口结束获取信息-------')
-
-# exit()
-
 logger.info(u'短信发送接口开始操作：')
+
+
 
 #  开始执行短信发送步骤
 sms_host = 'http://ali-sms.showapi.com'
@@ -100,30 +118,11 @@ sms_appcode = '89827366650247fab6bdd2acec7545a2'
 sms_headers = {}
 sms_headers['Authorization'] = 'APPCODE ' + sms_appcode
 
-# 获取当前为周几
-curr_day = ''
-curr_day_info = datetime.datetime.now()
-curr_day_tmp = curr_day_info.weekday()
-if curr_day_tmp == 0:
-    curr_day = '一'
-elif curr_day_tmp == 1:
-    curr_day = '二'
-elif curr_day_tmp == 2:
-    curr_day = '三'
-elif curr_day_tmp == 3:
-    curr_day = '四'
-elif curr_day_tmp == 4:
-    curr_day = '五'
-elif curr_day_tmp == 5:
-    curr_day = '六'
-elif curr_day_tmp == 6:
-    curr_day = '天'
-
 sms_content = {}  # 短信网关发送的预置参数
 sms_content['day'] = curr_day  # 今天是周几，填入输入一、二、三、四、五、六、天
 sms_content['low'] = today_low_temp  # 当天最低气温度数
 sms_content['high'] = today_high_temp  # 当前最高气温度数
-sms_content['city'] = '观山湖'  # 当前所在城市，如贵阳市、南明区、观山湖区
+sms_content['city'] = city_name  # 当前所在城市，如贵阳市、南明区、观山湖区
 sms_content['temp'] = curr_temp  # 当前实时气温
 
 sms_mobile_num = receive_mobile  # 接收短信的号码
@@ -137,9 +136,6 @@ logger.info(u'短信接口组装地址为：%s' % (sms_querys))
 
 sms_r = requests.get(sms_url + '?' + sms_querys, headers=sms_headers)
 
-# print(sms_r)
-# print(sms_r.text)
-# print(json.loads(sms_r.text))
 
 logger.info(u'短信接口请求返回JSON结果为：%s' % (json.loads(sms_r.text)))
 
