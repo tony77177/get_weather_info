@@ -46,7 +46,7 @@ else:
     city_name = '观山湖'
 
 # 设置日志配置环境
-LOG_FILE = r'/root/get_weather_info/get_weather_info/weather.log'  #  日志存储路径
+LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
 # LOG_FILE = r'./weather.log'  #  日志存储路径
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
