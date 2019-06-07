@@ -7,6 +7,7 @@
 #
 #
 
+import os
 import json
 import requests
 import datetime
@@ -15,6 +16,21 @@ import logging.handlers
 receive_mobile = '##'  # 接受短信手机号码
 
 sms_template_num = 'T170317004529'  # 短信网关模板编号
+
+# 设置日志配置环境
+# LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
+LOG_FILE = r'./weather.log'  #  日志存储路径
+
+handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
+                                               encoding='utf-8')  # 实例化handler
+fmt = '%(asctime)s - %(levelname)s - %(message)s'
+
+formatter = logging.Formatter(fmt)  # 实例化formatter
+handler.setFormatter(formatter)  # 为handler添加formatter
+
+logger = logging.getLogger('weather')  # 获取名为weather的logger
+logger.addHandler(handler)  # 为logger添加handler
+logger.setLevel(logging.DEBUG)
 
 # 获取当前为周几，用于判断：工作日时间推送观山湖区天气预报，休息日推送南明区天气预报 南明区ID：2991  观山湖区ID：2998
 curr_day = ''  # 短信推送周几的变量
@@ -38,29 +54,75 @@ elif curr_day_tmp == 5:
 elif curr_day_tmp == 6:
     curr_day = '天'
 
-if (curr_day_tmp == 5 or curr_day_tmp == 6):  # 如果是周末，则推送南明区天气，否则推送观山湖区
+# 通过自建接口，判断当前时间是否为工作日
+# 判断说明：只需要判断结果是否为0即可
+# 接口使用方式如下：
+#   请求地址：http://api.freedomdream.cn/
+#   请求参数：d 字符串形式 举例：?d=20190505
+#   返回参数：工作日对应结果为 0, 休息日对应结果为 1, 节假日对应的结果为 2；
+#   请求示例：http://api.freedomdream.cn/?d=20190505
+#   返回示例：{"result":0}
+#  开始执行短信发送步骤
+
+holiday_host = 'http://api.freedomdream.cn/?d='
+
+holiday_para = curr_day_info.strftime("%Y%m%d")
+
+holiday_url = holiday_host + holiday_para
+
+logger.info(u'------节假日判断接口开始操作-------')
+
+logger.info(u'节假日判断接口组装地址为：%s' % (holiday_url))
+
+holiday_r = requests.get(holiday_url)
+
+holiday_json_result = json.loads(holiday_r.text)
+
+logger.info(u'节假日判断接口请求返回JSON结果为：%s' % (holiday_json_result))
+
+logger.info(u'------节假日判断接口结束操作-------')
+
+# print(holiday_json_result['result'])
+
+if (holiday_json_result['result'] != 0):  # 如果不等于0则是周末，则推送南明区天气，否则推送观山湖区
     city_id = 2991
     city_name = '南明区'
 else:
     city_id = 2998
     city_name = '观山湖'
 
-# 设置日志配置环境
-LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
-# LOG_FILE = r'./weather.log'  #  日志存储路径
+# print(city_id)
+# print(city_name)
+#
+# exit()
 
-handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
-                                               encoding='utf-8')  # 实例化handler
-fmt = '%(asctime)s - %(levelname)s - %(message)s'
+# 以下为特殊逻辑，当不在"南明区"及"观山湖"两个区域时，采用特定逻辑指定 城市ID 城市名字，进行数据推送
+#   文件每行介绍说明
+#   第一行：为结束时间，与当前时间进行判断，大于则跳过，小于等于继续读取，特殊逻辑处理
+#   第二行：为城市ID:cityID
+#   第三行：为城市名字
+#
+logger.info(u'------特殊逻辑开始处理信息-------')
 
-formatter = logging.Formatter(fmt)  # 实例化formatter
-handler.setFormatter(formatter)  # 为handler添加formatter
+is_special_day_path = './special_day.log'
+# print(holiday_para)
+special_file = open(is_special_day_path, 'r+')
+special_result = special_file.readlines()
+logger.info(u'特殊逻辑信息读取结果为：%s' % (special_result))
 
-logger = logging.getLogger('weather')  # 获取名为spider的logger
-logger.addHandler(handler)  # 为logger添加handler
-logger.setLevel(logging.DEBUG)
+# print(special_result)
 
-logger.info(u'天气接口开始获取信息：')
+if (special_result[0].strip('\n') > holiday_para):
+    city_id = special_result[1].strip('\n')
+    city_name = special_result[2].strip('\n')
+
+# print(city_id)
+# print(city_name)
+special_file.close()
+logger.info(u'------特殊逻辑结束处理信息-------')
+# exit()
+
+logger.info(u'------天气接口开始获取信息-------')
 
 #   设置天气预报获取相关参数
 # host = 'http://freecityid.market.alicloudapi.com'   #墨迹天气免费版API接口
@@ -95,6 +157,7 @@ curr_temp_bodys = {}
 curr_temp_bodys['cityId'] = city_id
 curr_temp_bodys['token'] = '50b53ff8dd7d9fa320d3d3ca32cf8ed1'  # 实时天气的token
 
+#执行POST操作
 curr_temp_result = requests.post(curr_temp_url, headers=headers, data=curr_temp_bodys)
 
 curr_temp_json_result = json.loads(curr_temp_result.text)
@@ -104,8 +167,9 @@ curr_temp = curr_temp_json_result['data']['condition']['temp']
 # print(r.text)
 logger.info(u'实时天气接口获取JSON信息：%s' % (curr_temp_json_result))
 logger.info(u'------天气接口结束获取信息-------')
-logger.info(u'短信发送接口开始操作：')
 
+# 短信发送操作模块
+logger.info(u'------短信发送接口开始操作-------')
 #  开始执行短信发送步骤
 sms_host = 'http://ali-sms.showapi.com'
 sms_path = '/sendSms'
@@ -116,6 +180,7 @@ sms_headers = {}
 sms_headers['Authorization'] = 'APPCODE ' + sms_appcode
 
 sms_content = {}  # 短信网关发送的预置参数
+# 以下为老短信网关模板所需参数，现废弃更改为使用新短信网关模板
 # sms_content['day'] = curr_day  # 今天是周几，填入输入一、二、三、四、五、六、天
 # sms_content['low'] = today_low_temp  # 当天最低气温度数
 # sms_content['high'] = today_high_temp  # 当前最高气温度数
