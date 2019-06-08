@@ -91,36 +91,32 @@ else:
     city_id = 2998
     city_name = '观山湖'
 
-# print(city_id)
-# print(city_name)
-#
-# exit()
 
 # 以下为特殊逻辑，当不在"南明区"及"观山湖"两个区域时，采用特定逻辑指定 城市ID 城市名字，进行数据推送
-#   文件每行介绍说明
-#   第一行：为结束时间，与当前时间进行判断，大于则跳过，小于等于继续读取，特殊逻辑处理
-#   第二行：为城市ID:cityID
-#   第三行：为城市名字
+#   文件每行介绍说明（采用JSON格式）
+#   第一行、二行：开始时间和结束时间，判断依据：当前时间>=开始时间 and 当前时间<结束时间
+#   第三行：为城市ID:cityID
+#   第四行：为城市名字
 #
 logger.info(u'------特殊逻辑开始处理信息-------')
 
-is_special_day_path = './special_day.log'
-# print(holiday_para)
+is_special_day_path = './special_day.json'
+# is_special_day_path = '/root/get_weather_info/special_day.json' #线上环境日志
 special_file = open(is_special_day_path, 'r+')
-special_result = special_file.readlines()
-logger.info(u'特殊逻辑信息读取结果为：%s' % (special_result))
+special_result = special_file.read()
+special_json_result = json.loads(special_result)
 
 # print(special_result)
+if (holiday_para >= special_json_result['begin_time'] and holiday_para < special_json_result['end_time']):
+    city_id = special_json_result['city_id']
+    city_name = special_json_result['city_name']
+    logger.info(u'采用特殊逻辑处理，读取结果为：%s' % (special_json_result))
+else:
+    logger.info(u'无特殊逻辑，正常处理')
 
-if (special_result[0].strip('\n') > holiday_para):
-    city_id = special_result[1].strip('\n')
-    city_name = special_result[2].strip('\n')
-
-# print(city_id)
-# print(city_name)
 special_file.close()
+
 logger.info(u'------特殊逻辑结束处理信息-------')
-# exit()
 
 logger.info(u'------天气接口开始获取信息-------')
 
@@ -157,7 +153,7 @@ curr_temp_bodys = {}
 curr_temp_bodys['cityId'] = city_id
 curr_temp_bodys['token'] = '50b53ff8dd7d9fa320d3d3ca32cf8ed1'  # 实时天气的token
 
-#执行POST操作
+# 执行POST操作
 curr_temp_result = requests.post(curr_temp_url, headers=headers, data=curr_temp_bodys)
 
 curr_temp_json_result = json.loads(curr_temp_result.text)
