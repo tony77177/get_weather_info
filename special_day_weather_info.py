@@ -45,22 +45,35 @@ special_result = special_file.read()
 special_json_result = json.loads(special_result)
 
 #
-#     特殊逻辑开始处理：
+#   特殊逻辑开始处理：
 #       1）出发前一天晚上进行出发提醒，判断依据：当前时间 + 86400秒 = 开始时间，采用特殊地点进行推送
 #       2）回城前一天晚上进行回程提醒，判断依据：当前时间 + 86400秒 = 结束时间，采用南明区进行推送
+#
+#   文件每行介绍说明（采用JSON格式）
+#       第一行、二行：开始时间和结束时间，判断依据：当前时间>=开始时间 and 当前时间<结束时间
+#       第三行：为城市ID:cityID
+#       第四行：为城市名字
+#       第五行：判断是否与女票同行标志，值为0时：不同行；值为1时：同行
+#               此处用于同行及女票单独出行时推送不同的短信模板
 #
 if (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
         time.strptime(special_json_result['begin_time'], '%Y%m%d'))):
     city_id = special_json_result['city_id']
     city_name = special_json_result['city_name']
     special_flag = 1  # 出发提醒判断依据
-    sms_template_num = 'T170317004583'  # 出发提醒的短信网关模板
+    if (special_json_result['is_together'] == 0):   #判断是否与女票同行出发依据，0为不同行，1为同行
+        sms_template_num = 'T170317004529'  # 女票单独出发提醒的短信网关模板
+    else:
+        sms_template_num = 'T170317004588'  # 同行出发提醒的短信网关模板
 elif (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
         time.strptime(special_json_result['end_time'], '%Y%m%d'))):
     city_id = 2991
     city_name = '南明区'
     special_flag = 2  # 返程提醒判断依据
-    sms_template_num = 'T170317004585'  # 回程提醒的短信网关模板
+    if (special_json_result['is_together'] == 0):  # 判断是否与女票同行出发依据，0为不同行，1为同行
+        sms_template_num = 'T170317004585'  # 女票单独回程提醒的短信网关模板
+    else:
+        sms_template_num = 'T170317004589'  # 同行回程提醒的短信网关模板
 else:
     logger.info(u'无需要提醒信息')
     logger.info(u'------特殊提醒结束处理信息-------')
