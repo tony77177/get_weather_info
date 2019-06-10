@@ -13,8 +13,8 @@ import datetime
 import logging.handlers
 
 # 设置日志配置环境
-# LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
-LOG_FILE = r'./weather.log'  #  日志存储路径
+LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
+#LOG_FILE = r'./weather.log'  #  日志存储路径
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
                                                encoding='utf-8')  # 实例化handler
@@ -38,8 +38,8 @@ today_info = curr_day_info.strftime("%Y%m%d")  # 当前时间，格式示例为�
 
 logger.info(u'------特殊提醒开始处理信息-------')
 
-is_special_day_path = './special_day.json'
-# is_special_day_path = '/root/get_weather_info/special_day.json' #线上环境日志
+#is_special_day_path = './special_day.json'
+is_special_day_path = '/root/get_weather_info/special_day.json' #线上环境日志
 special_file = open(is_special_day_path, 'r+')
 special_result = special_file.read()
 special_json_result = json.loads(special_result)
@@ -62,7 +62,7 @@ if (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
     city_name = special_json_result['city_name']
     special_flag = 1  # 出发提醒判断依据
     if (special_json_result['is_together'] == 0):   #判断是否与女票同行出发依据，0为不同行，1为同行
-        sms_template_num = 'T170317004529'  # 女票单独出发提醒的短信网关模板
+        sms_template_num = 'T170317004583'  # 女票单独出发提醒的短信网关模板
     else:
         sms_template_num = 'T170317004588'  # 同行出发提醒的短信网关模板
 elif (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
