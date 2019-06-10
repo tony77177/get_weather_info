@@ -102,9 +102,9 @@ three_days_result = requests.post(three_days_url, headers=headers, data=three_da
 
 three_days_json_result = json.loads(three_days_result.text)
 
-today_high_temp = three_days_json_result['data']['forecast'][1]['tempDay']  # 当天最高气温
-today_low_temp = three_days_json_result['data']['forecast'][1]['tempNight']  # 当天最低气温
-today_condition = three_days_json_result['data']['forecast'][1]['conditionDay']  # 当天天气实况
+today_high_temp = three_days_json_result['data']['forecast'][2]['tempDay']  # 读取明天最高气温
+today_low_temp = three_days_json_result['data']['forecast'][2]['tempNight']  # 读取明天最低气温
+today_condition = three_days_json_result['data']['forecast'][2]['conditionDay']  # 读取明天天气实况
 
 logger.info(u'15天天气情况获取JSON结果为：%s' % (three_days_json_result))
 logger.info(u'------天气接口结束获取信息-------')
