@@ -7,7 +7,6 @@
 #
 #
 
-import os
 import json
 import requests
 import datetime
@@ -17,9 +16,12 @@ receive_mobile = '##'  # 接受短信手机号码
 
 sms_template_num = 'T170317004529'  # 短信网关模板编号
 
+# is_special_day_path = './special_day.json'
+is_special_day_path = '/root/get_weather_info/special_day.json'  # 线上环境日志
+
 # 设置日志配置环境
-# LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
-LOG_FILE = r'./weather.log'  #  日志存储路径
+LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
+# LOG_FILE = r'./weather.log'  #  日志存储路径
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
                                                encoding='utf-8')  # 实例化handler
@@ -91,7 +93,6 @@ else:
     city_id = 2998
     city_name = '观山湖'
 
-
 # 以下为特殊逻辑，当不在"南明区"及"观山湖"两个区域时，采用特定逻辑指定 城市ID 城市名字，进行数据推送
 #   文件每行介绍说明（采用JSON格式）
 #   第一行、二行：开始时间和结束时间，判断依据：当前时间>=开始时间 and 当前时间<结束时间
@@ -101,8 +102,6 @@ else:
 #
 logger.info(u'------特殊逻辑开始处理信息-------')
 
-is_special_day_path = './special_day.json'
-# is_special_day_path = '/root/get_weather_info/special_day.json' #线上环境日志
 special_file = open(is_special_day_path, 'r+')
 special_result = special_file.read()
 special_json_result = json.loads(special_result)

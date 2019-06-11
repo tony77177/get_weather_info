@@ -12,9 +12,21 @@ import requests
 import datetime
 import logging.handlers
 
+#  公共参数配置
+receive_mobile = '##'  # 接受短信手机号码
+sms_template_num = ''  # 短信网关模板编号
+city_id = ''  # 推送城市ID
+city_name = ''  # 推送的城市名字
+special_flag = ''  # 发送判断依据，值为1时：出发天气提醒；值为2时：返程提醒
+curr_day_info = datetime.datetime.now()
+today_info = curr_day_info.strftime("%Y%m%d")  # 当前时间，格式示例为：20190608
+
+# is_special_day_path = './special_day.json'
+is_special_day_path = '/root/get_weather_info/special_day.json'  # 线上环境日志
+
 # 设置日志配置环境
 LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
-#LOG_FILE = r'./weather.log'  #  日志存储路径
+# LOG_FILE = r'./weather.log'  #  日志存储路径
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
                                                encoding='utf-8')  # 实例化handler
@@ -27,19 +39,8 @@ logger = logging.getLogger('weather')  # 获取名为weather的logger
 logger.addHandler(handler)  # 为logger添加handler
 logger.setLevel(logging.DEBUG)
 
-#  公共参数配置
-receive_mobile = '15285149403'  # 接受短信手机号码
-sms_template_num = ''  # 短信网关模板编号
-city_id = ''  # 推送城市ID
-city_name = ''  # 推送的城市名字
-special_flag = ''  # 发送判断依据，值为1时：出发天气提醒；值为2时：返程提醒
-curr_day_info = datetime.datetime.now()
-today_info = curr_day_info.strftime("%Y%m%d")  # 当前时间，格式示例为：20190608
-
 logger.info(u'------特殊提醒开始处理信息-------')
 
-#is_special_day_path = './special_day.json'
-is_special_day_path = '/root/get_weather_info/special_day.json' #线上环境日志
 special_file = open(is_special_day_path, 'r+')
 special_result = special_file.read()
 special_json_result = json.loads(special_result)
@@ -61,7 +62,7 @@ if (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
     city_id = special_json_result['city_id']
     city_name = special_json_result['city_name']
     special_flag = 1  # 出发提醒判断依据
-    if (special_json_result['is_together'] == 0):   #判断是否与女票同行出发依据，0为不同行，1为同行
+    if (special_json_result['is_together'] == 0):  # 判断是否与女票同行出发依据，0为不同行，1为同行
         sms_template_num = 'T170317004583'  # 女票单独出发提醒的短信网关模板
     else:
         sms_template_num = 'T170317004588'  # 同行出发提醒的短信网关模板
