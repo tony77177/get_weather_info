@@ -12,15 +12,18 @@ import requests
 import datetime
 import logging.handlers
 
-receive_mobile = '##'  # 接受短信手机号码
+receive_mobile = '15285149403'  # 接受短信手机号码
 
 sms_template_num = 'T170317004529'  # 短信网关模板编号
 
+# common_path = '/root/get_weather_info'  # 线上公共目录
+common_path = '/Users/tony/PycharmProjects/get_weather_info/get_weather_info/'  # 测试环境
+
 # is_special_day_path = './special_day.json'
-is_special_day_path = '/root/get_weather_info/special_day.json'  # 线上环境日志
+is_special_day_path = common_path + '/special_day.json'  # 线上环境日志
 
 # 设置日志配置环境
-LOG_FILE = r'/root/get_weather_info/weather.log'  #  日志存储路径
+LOG_FILE = common_path + '/weather.log'  #  日志存储路径
 # LOG_FILE = r'./weather.log'  #  日志存储路径
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
@@ -56,6 +59,7 @@ elif curr_day_tmp == 5:
 elif curr_day_tmp == 6:
     curr_day = '天'
 
+
 # 通过自建接口，判断当前时间是否为工作日
 # 判断说明：只需要判断结果是否为0即可
 # 接口使用方式如下：
@@ -66,27 +70,49 @@ elif curr_day_tmp == 6:
 #   返回示例：{"result":0}
 #  开始执行短信发送步骤
 
-holiday_host = 'http://api.freedomdream.cn/?d='
+def check_holiday(curr_day_info, curr_day_tmp):
+    year_info = curr_day_info.strftime("%Y")
+    key_info = curr_day_info.strftime("%m%d")
+    holiday_file_url = common_path + year_info + '_data.json'
+    f = open(holiday_file_url)
+    res = json.loads(f.read())
+    result = 0
+    if (key_info in res):
+        result = res[key_info]
+    elif (curr_day_tmp == 5 or curr_day_tmp == 6):
+        result = 1
+    return result
 
+
+#
+# holiday_host = 'http://api.freedomdream.cn/?d='
+#
 holiday_para = curr_day_info.strftime("%Y%m%d")
+#
+# holiday_url = holiday_host + holiday_para
 
-holiday_url = holiday_host + holiday_para
+# 更改日期判断为本地判断，取消API接口获取
+holiday_result = check_holiday(curr_day_info, curr_day_tmp)
+
+# print(holiday_result)
+# exit()
+
 
 logger.info(u'------节假日判断接口开始操作-------')
 
-logger.info(u'节假日判断接口组装地址为：%s' % (holiday_url))
+# logger.info(u'节假日判断接口组装地址为：%s' % (holiday_url))
 
-holiday_r = requests.get(holiday_url)
+# holiday_r = requests.get(holiday_url)
 
-holiday_json_result = json.loads(holiday_r.text)
+# holiday_json_result = json.loads(holiday_r.text)
 
-logger.info(u'节假日判断接口请求返回JSON结果为：%s' % (holiday_json_result))
+logger.info(u'节假日判断接口请求返回JSON结果为：%s' % (holiday_result))
 
 logger.info(u'------节假日判断接口结束操作-------')
 
 # print(holiday_json_result['result'])
 
-if (holiday_json_result['result'] != 0):  # 如果不等于0则是周末，则推送南明区天气，否则推送观山湖区
+if (holiday_result != 0):  # 如果不等于0则是周末，则推送南明区天气，否则推送观山湖区
     city_id = 2991
     city_name = '南明区'
 else:
