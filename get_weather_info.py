@@ -16,14 +16,14 @@ receive_mobile = '##'  # 接受短信手机号码
 
 sms_template_num = 'T170317004529'  # 短信网关模板编号
 
-# common_path = '/root/get_weather_info'  # 线上公共目录
+# common_path = '/root/get_weather_info/'  # 线上公共目录
 common_path = '/Users/tony/PycharmProjects/get_weather_info/get_weather_info/'  # 测试环境
 
 # is_special_day_path = './special_day.json'
-is_special_day_path = common_path + '/special_day.json'  # 线上环境日志
+is_special_day_path = common_path + 'special_day.json'  # 线上环境日志
 
 # 设置日志配置环境
-LOG_FILE = common_path + '/weather.log'  #  日志存储路径
+LOG_FILE = common_path + 'weather.log'  #  日志存储路径
 # LOG_FILE = r'./weather.log'  #  日志存储路径
 
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=1024 * 1024, backupCount=5,
