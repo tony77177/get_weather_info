@@ -8,6 +8,7 @@
 #
 
 import json
+import time
 import requests
 import datetime
 import logging.handlers
@@ -171,6 +172,13 @@ today_low_temp = three_days_json_result['data']['forecast'][1]['tempNight']  # �
 today_condition = three_days_json_result['data']['forecast'][1]['conditionDay']  # 当天天气实况
 
 logger.info(u'15天天气情况获取JSON结果为：%s' % (three_days_json_result))
+
+
+#   此处增加sleep函数，防止请求过快API服务器拒绝
+#   休眠单位：秒
+#   休眠时间：1秒
+time.sleep(1)
+
 
 #    获取当前实时天气预报
 curr_temp_path = '/whapi/json/alicityweather/condition'  # 实时天气API地址
