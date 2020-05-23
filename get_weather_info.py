@@ -4,6 +4,7 @@
 #   时间：2019-05-28
 #   主要作用：通过天气接口获取相应城市天气，再通过短信接口推送至相应的手机
 #
+#   2020.05.23  更新SMS短信提供商
 #
 #
 
@@ -13,9 +14,9 @@ import requests
 import datetime
 import logging.handlers
 
-receive_mobile = '##'  # 接受短信手机号码
+receive_mobile = '+86'  # 接受短信手机号码
 
-sms_template_num = 'T170317004529'  # 短信网关模板编号
+sms_template_num = '20200521165327'  # 短信网关模板编号
 
 # common_path = '/root/get_weather_info/'  # 线上公共目录
 common_path = '/Users/tony/PycharmProjects/get_weather_info/get_weather_info/'  # 测试环境
@@ -173,12 +174,10 @@ today_condition = three_days_json_result['data']['forecast'][1]['conditionDay'] 
 
 logger.info(u'15天天气情况获取JSON结果为：%s' % (three_days_json_result))
 
-
 #   此处增加sleep函数，防止请求过快API服务器拒绝
 #   休眠单位：秒
 #   休眠时间：1秒
 time.sleep(1)
-
 
 #    获取当前实时天气预报
 curr_temp_path = '/whapi/json/alicityweather/condition'  # 实时天气API地址
@@ -199,15 +198,17 @@ logger.info(u'实时天气接口获取JSON信息：%s' % (curr_temp_json_result)
 logger.info(u'------天气接口结束获取信息-------')
 
 # 短信发送操作模块
+# 2020.5.21 更换SMS提供商
 logger.info(u'------短信发送接口开始操作-------')
 #  开始执行短信发送步骤
-sms_host = 'http://ali-sms.showapi.com'
-sms_path = '/sendSms'
+sms_host = 'http://edisim.market.alicloudapi.com'
+sms_path = '/comms/sms/sendmsg'
 sms_url = sms_host + sms_path
 
 sms_appcode = '89827366650247fab6bdd2acec7545a2'
 sms_headers = {}
 sms_headers['Authorization'] = 'APPCODE ' + sms_appcode
+sms_headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
 
 sms_content = {}  # 短信网关发送的预置参数
 # 以下为老短信网关模板所需参数，现废弃更改为使用新短信网关模板
@@ -218,24 +219,22 @@ sms_content = {}  # 短信网关发送的预置参数
 # sms_content['temp'] = curr_temp  # 当前实时气温
 
 #   更换新短信模板 宝贝：今天是周[s1]，气温[s2]至[s3]度，[s4]，现在[s5]实时温度为[s6]度，美好的一天赵先生与你共享!
-sms_content['s1'] = curr_day  # 今天是周几，填入输入一、二、三、四、五、六、天
-sms_content['s2'] = today_low_temp  # 当天最低气温度数
-sms_content['s3'] = today_high_temp  # 当前最高气温度数
-sms_content['s4'] = today_condition  # 当前天气实时情况
-sms_content['s5'] = city_name  # 当前所在城市，如贵阳市、南明区、观山湖区
-sms_content['s6'] = curr_temp  # 当前实时气温
+# sms_content['s1'] = curr_day  # 今天是周几，填入输入一、二、三、四、五、六、天
+# sms_content['s2'] = today_low_temp  # 当天最低气温度数
+# sms_content['s3'] = today_high_temp  # 当前最高气温度数
+# sms_content['s4'] = today_condition  # 当前天气实时情况
+# sms_content['s5'] = city_name  # 当前所在城市，如贵阳市、南明区、观山湖区
+# sms_content['s6'] = curr_temp  # 当前实时气温
 
-sms_mobile_num = receive_mobile  # 接收短信的号码
-sms_tNum = sms_template_num  # 短信网关的模板编号
+# 2020.5.21 更换新的SMS提供商
+sms_content["mobile"] = receive_mobile  # 接收短信的号码
+sms_content['templateID'] = sms_template_num  # 短信网关的模板编号
+sms_content['templateParamSet'] = "['" + curr_day + "','" + today_low_temp + "','" + today_high_temp + "','" + today_condition + "','" + city_name + "','" + curr_temp + "']"
 
-json_sms_content = json.dumps(sms_content)
+logger.info(u'短信接口参数为：%s' % (sms_content))
 
-sms_querys = 'content=' + (json_sms_content) + '&mobile=' + sms_mobile_num + '&tNum=' + sms_tNum
+sms_r = requests.post(sms_url, data=sms_content, headers=sms_headers)
 
-logger.info(u'短信接口组装地址为：%s' % (sms_querys))
-
-sms_r = requests.get(sms_url + '?' + sms_querys, headers=sms_headers)
-
-logger.info(u'短信接口请求返回JSON结果为：%s' % (json.loads(sms_r.text)))
+logger.info(u'短信接口请求返回JSON结果为：%s' % (json.loads(sms_r.content)))
 
 logger.info(u'------短信发送接口结束操作-------')

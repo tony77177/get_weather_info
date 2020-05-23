@@ -4,6 +4,7 @@
 #   作者：赵昱
 #   时间：2019-06-08
 #
+#   2020.5.23   更新SMS提供商
 #
 
 import time
@@ -13,7 +14,7 @@ import datetime
 import logging.handlers
 
 #  公共参数配置
-receive_mobile = '##'  # 接受短信手机号码
+receive_mobile = '+86'  # 接受短信手机号码
 sms_template_num = ''  # 短信网关模板编号
 city_id = ''  # 推送城市ID
 city_name = ''  # 推送的城市名字
@@ -63,18 +64,18 @@ if (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
     city_name = special_json_result['city_name']
     special_flag = 1  # 出发提醒判断依据
     if (special_json_result['is_together'] == 0):  # 判断是否与女票同行出发依据，0为不同行，1为同行
-        sms_template_num = 'T170317004583'  # 女票单独出发提醒的短信网关模板
+        sms_template_num = '20200522163339'  # 女票单独出发提醒的短信网关模板
     else:
-        sms_template_num = 'T170317004588'  # 同行出发提醒的短信网关模板
+        sms_template_num = '20200522163641'  # 同行出发提醒的短信网关模板
 elif (time.mktime(time.strptime(today_info, '%Y%m%d')) + 86400 == time.mktime(
         time.strptime(special_json_result['end_time'], '%Y%m%d'))):
     city_id = 2991
     city_name = '南明区'
     special_flag = 2  # 返程提醒判断依据
     if (special_json_result['is_together'] == 0):  # 判断是否与女票同行出发依据，0为不同行，1为同行
-        sms_template_num = 'T170317004585'  # 女票单独回程提醒的短信网关模板
+        sms_template_num = '20200522163531'  # 女票单独回程提醒的短信网关模板
     else:
-        sms_template_num = 'T170317004589'  # 同行回程提醒的短信网关模板
+        sms_template_num = '20200522163749'  # 同行回程提醒的短信网关模板
 else:
     logger.info(u'无需要提醒信息')
     logger.info(u'------特殊提醒结束处理信息-------')
@@ -113,31 +114,38 @@ logger.info(u'------天气接口结束获取信息-------')
 # 短信发送操作模块
 logger.info(u'------短信发送接口开始操作-------')
 #  开始执行短信发送步骤
-sms_host = 'http://ali-sms.showapi.com'
-sms_path = '/sendSms'
+sms_host = 'http://edisim.market.alicloudapi.com'
+sms_path = '/comms/sms/sendmsg'
 sms_url = sms_host + sms_path
 
 sms_appcode = '89827366650247fab6bdd2acec7545a2'
 sms_headers = {}
 sms_headers['Authorization'] = 'APPCODE ' + sms_appcode
+sms_headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
 
 #    短信模板参数：S1：城市名字，S2：当天最低气温，S3:当天最高气温，S4:天气情况
 sms_content = {}  # 短信网关发送的预置参数
-sms_content['s1'] = city_name  # 今天是周几，填入输入一、二、三、四、五、六、天
-sms_content['s2'] = today_low_temp  # 当天最低气温度数
-sms_content['s3'] = today_high_temp  # 当前最高气温度数
-sms_content['s4'] = today_condition  # 当前天气实时情况
+# sms_content['s1'] = city_name  # 今天是周几，填入输入一、二、三、四、五、六、天
+# sms_content['s2'] = today_low_temp  # 当天最低气温度数
+# sms_content['s3'] = today_high_temp  # 当前最高气温度数
+# sms_content['s4'] = today_condition  # 当前天气实时情况
+#   更新为新SMS提供商的参数
+sms_content["mobile"] = receive_mobile  # 接收短信的号码
+sms_content['templateID'] = sms_template_num  # 短信网关的模板编号
+sms_content['templateParamSet'] = "['" + city_name + "','" + today_low_temp + "','" + today_high_temp + "','" + today_condition +  "']"
 
-sms_mobile_num = receive_mobile  # 接收短信的号码
-sms_tNum = sms_template_num  # 短信网关的模板编号
 
-json_sms_content = json.dumps(sms_content)
+# sms_mobile_num = receive_mobile  # 接收短信的号码
+# sms_tNum = sms_template_num  # 短信网关的模板编号
 
-sms_querys = 'content=' + (json_sms_content) + '&mobile=' + sms_mobile_num + '&tNum=' + sms_tNum
+# json_sms_content = json.dumps(sms_content)
 
-logger.info(u'短信接口组装地址为：%s' % (sms_querys))
+# sms_querys = 'content=' + (json_sms_content) + '&mobile=' + sms_mobile_num + '&tNum=' + sms_tNum
 
-sms_r = requests.get(sms_url + '?' + sms_querys, headers=sms_headers)
+logger.info(u'短信接口参数为：%s' % (sms_content))
+
+sms_r = requests.post(sms_url, data=sms_content, headers=sms_headers)
+# sms_r = requests.get(sms_url + '?' + sms_querys, headers=sms_headers)
 
 logger.info(u'短信接口请求返回JSON结果为：%s' % (json.loads(sms_r.text)))
 
